@@ -2,7 +2,7 @@ import tape from "tape-await";
 import zlib from "zlib";
 import fs from "fs";
 import path from "path";
-import { reader, unzip } from "../src/index.js";
+import { bufferReader, unzip } from "../src/index.js";
 const { promisify } = require("util");
 
 const readdir = promisify(fs.readdir);
@@ -17,7 +17,7 @@ tape(`ZipReader`, async function() {
 
 async function testUnzip({ path : filePath, content, buf }) {
   tape(`ZipReader - ${filePath}`,  async function(t) {
-    const files = unzip(reader(buf));
+    const files = unzip(bufferReader(buf));
     let count = 0;
     for await (let f of files()) {
       const isDirectory = f.path[f.path.length - 1] === '/';
