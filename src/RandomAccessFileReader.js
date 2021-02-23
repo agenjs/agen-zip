@@ -8,7 +8,7 @@ export default class RandomAccessBufferReader extends RandomAccessReader {
   }
 
   async read(start, end) {
-    const blob = this.file.slice(start, end);
+    const blob = this._file.slice(start, end);
     return new Uint8Array(await blob.arrayBuffer());
   }
 
