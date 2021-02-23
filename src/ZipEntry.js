@@ -16,12 +16,10 @@ export default class ZipEntry extends ZipBase {
         get path() { return entry.fileName.replace(/\\/gim, '/'); },
         get size() { return entry.uncompressedSize; },
         get type() { return ''; },
-        get content() {
-          return async function* content() {
-            let it = entry.readRawContent();
-            // if (entry.isCompressed()) it = agen.inflate(it, { raw: true });
-            yield* it;
-          }
+        content : async function* content() {
+          let it = entry.readRawContent();
+          // if (entry.isCompressed()) it = agen.inflate(it, { raw: true });
+          yield* it;
         },
         get compressedSize() { return entry.compressedSize; },
         get modified() { return entry.getLastModDate(); },
@@ -76,8 +74,8 @@ export default class ZipEntry extends ZipBase {
       const fields = this._binExtraFields = [];
       var i = 0;
       while (i < buf.length - 3) {
-        const headerId = buf.readUInt16LE(i + 0);
-        const dataSize = buf.readUInt16LE(i + 2);
+        const headerId = this._readUInt16LE(buf, i + 0);
+        const dataSize = this._readUInt16LE(buf, i + 2);
         const dataStart = i + 4;
         const dataEnd = dataStart + dataSize;
         if (dataEnd > buf.length) {
@@ -100,7 +98,7 @@ export default class ZipEntry extends ZipBase {
     let buffer;
     buffer = await this.reader.read(this.relativeOffsetOfLocalHeader, this.relativeOffsetOfLocalHeader + 30);
     // 0 - Local file header signature = 0x04034b50
-    var signature = buffer.readUInt32LE(0);
+    var signature = this._readUInt32LE(buffer, 0);
     if (signature !== 0x04034b50) {
       throw new Error("invalid local file header signature: 0x" + signature.toString(16));
     }
@@ -114,9 +112,9 @@ export default class ZipEntry extends ZipBase {
     // 18 - Compressed size
     // 22 - Uncompressed size
     // 26 - File name length (n)
-    const fileNameLength = buffer.readUInt16LE(26);
+    const fileNameLength = this._readUInt16LE(buffer, 26);
     // 28 - Extra field length (m)
-    const extraFieldLength = buffer.readUInt16LE(28);
+    const extraFieldLength = this._readUInt16LE(buffer, 28);
     // 30 - File name
     // 30+n - Extra field
 
@@ -163,41 +161,41 @@ export default class ZipEntry extends ZipBase {
 
   _readFileHeader(buffer) {
     // 0 - Central directory file header signature
-    const signature = buffer.readUInt32LE(0);
+    const signature = this._readUInt32LE(buffer, 0);
     if (signature !== 0x02014b50) {
       throw new Error("Invalid central directory file header signature: 0x" + signature.toString(16));
     }
     // 4 - Version made by
-    this.versionMadeBy = buffer.readUInt16LE(4);
+    this.versionMadeBy = this._readUInt16LE(buffer, 4);
     // 6 - Version needed to extract (minimum)
-    this.versionNeededToExtract = buffer.readUInt16LE(6);
+    this.versionNeededToExtract = this._readUInt16LE(buffer, 6);
     // 8 - General purpose bit flag
-    this.generalPurposeBitFlag = buffer.readUInt16LE(8);
+    this.generalPurposeBitFlag = this._readUInt16LE(buffer, 8);
     // 10 - Compression method
-    this.compressionMethod = buffer.readUInt16LE(10);
+    this.compressionMethod = this._readUInt16LE(buffer, 10);
     // 12 - File last modification time
-    this.lastModFileTime = buffer.readUInt16LE(12);
+    this.lastModFileTime = this._readUInt16LE(buffer, 12);
     // 14 - File last modification date
-    this.lastModFileDate = buffer.readUInt16LE(14);
+    this.lastModFileDate = this._readUInt16LE(buffer, 14);
     // 16 - CRC-32
-    this.crc32 = buffer.readUInt32LE(16);
+    this.crc32 = this._readUInt32LE(buffer, 16);
     // 20 - Compressed size
-    this.compressedSize = buffer.readUInt32LE(20);
+    this.compressedSize = this._readUInt32LE(buffer, 20);
     // 24 - Uncompressed size
-    this.uncompressedSize = buffer.readUInt32LE(24);
+    this.uncompressedSize = this._readUInt32LE(buffer, 24);
     // 28 - File name length (n)
-    this.fileNameLength = buffer.readUInt16LE(28);
+    this.fileNameLength = this._readUInt16LE(buffer, 28);
     // 30 - Extra field length (m)
-    this.extraFieldLength = buffer.readUInt16LE(30);
+    this.extraFieldLength = this._readUInt16LE(buffer, 30);
     // 32 - File comment length (k)
-    this.fileCommentLength = buffer.readUInt16LE(32);
+    this.fileCommentLength = this._readUInt16LE(buffer, 32);
     // 34 - Disk number where file starts
     // 36 - Internal file attributes
-    this.internalFileAttributes = buffer.readUInt16LE(36);
+    this.internalFileAttributes = this._readUInt16LE(buffer, 36);
     // 38 - External file attributes
-    this.externalFileAttributes = buffer.readUInt32LE(38);
+    this.externalFileAttributes = this._readUInt32LE(buffer, 38);
     // 42 - Relative offset of local file header
-    this.relativeOffsetOfLocalHeader = buffer.readUInt32LE(42);
+    this.relativeOffsetOfLocalHeader = this._readUInt32LE(buffer, 42);
 
     if (this.generalPurposeBitFlag & 0x40) {
       throw new Error("strong encryption is not supported");
