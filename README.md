@@ -13,15 +13,15 @@ The structure of returned file instances:
 * `modified` the data of the file modification
 * `compressed` boolean flag defining if the content of the file is compresed or not
 
-**Note**: This utility *does not* provide inflating utilities for compressed files.
-To uncompress the content the `@agen/gzip` utility should be used in the `raw` mode. 
+**Note**: This module *does not* provide inflating utilities for compressed files.
+To uncompress the content the `@agen/gzip` library should be used in the `raw` mode. 
 
-Code in this library is based on a rewamped implementation of the [yauzl](https://github.com/thejoshwolfe/yauzl) package (MIT License). To properly read Zip archives this code uses random access readers provide the following methods and fields:
+The code of this library is based on a rewamped implementation of the [yauzl](https://github.com/thejoshwolfe/yauzl) package (MIT License). To properly read Zip archives this code uses random access readers providing the following methods and fields:
 * `async* readRange(from, to)` - provides an async iterator over the specified range of bytes
 * `async read(start, end)` - provides a (ArrayBuffer) with data from the specified byte range 
 * `length` the total length of the zipped content
 
-Internally all values are loaded from byte buffers using the standard `DataView` wrapper.
+Internally all values are loaded from byte arrays (like Uint8Array).
 
 This library has no external dependencies and can be used in the browser, in Deno or in Node environmets.
 
@@ -43,16 +43,16 @@ Example:
 ```javascript
 
 import fs from 'fs';
-import { unzip, BufferReader } from '@agen/zip';
+import { unzip, reader } from '@agen/zip';
 import { inflate } from '@agen/gzip';
 import { decode } from '@agen/encoding';
 import { compose } from '@agen/utils';
 
 const buf = fs.readFileSync('./MyArchive.zip');
-const reader = new agen.BufferReader(buf);
+const files = unzip(reader(buf)); // returns an Async Generator
 
 // Now we can decompress and read text content from files:
-for await (let file of unzip(reader)) {
+for await (let file of files()) {
   console.log('>', file.path, file.size);
 
   // Function transforming the content:
