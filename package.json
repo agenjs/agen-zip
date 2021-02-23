@@ -1,6 +1,6 @@
 {
   "name": "@agen/zip",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Unzip with Async Iterators",
   "keywords": [
     "async",
