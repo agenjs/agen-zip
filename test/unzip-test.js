@@ -2,7 +2,7 @@ import tape from "tape-await";
 import zlib from "zlib";
 import fs from "fs";
 import path from "path";
-import { bufferReader, unzip } from "../src/index.js";
+import { bufferReader, unzip, RandomAccessReader, RandomAccessFileReader } from "../src/index.js";
 const { promisify } = require("util");
 
 const readdir = promisify(fs.readdir);
@@ -12,6 +12,7 @@ tape(`ZipReader`, async function() {
   const dir = path.resolve(__dirname, './data');
   for await (let file of loadControl(dir)) {
     await testUnzip(file);
+    await testUnzipFile(file);
   }
 });
 
@@ -33,6 +34,52 @@ async function testUnzip({ path : filePath, content, buf }) {
   })
 }
 
+function fileReader(filePath) {
+  async function call(action){
+    return new Promise((resolve, reject) =>action(
+      (err, result) => (err ? reject(err) : resolve(result))
+    ));
+  }
+  class Reader extends RandomAccessReader {
+    async read(start, end) {
+      const fd = await call(cb => fs.open(this.options.filePath, cb));
+      try {
+        const size = end - start;
+        const buf = Buffer.allocUnsafe(size);
+        await call(cb => fs.read(fd, buf, 0, size, start, cb));
+        return buf;
+      } finally {
+        await call(cb => fs.close(fd, cb));
+      }
+    }
+    get length() {
+      if (!this._stats) {
+        this._stats = fs.statSync(this.options.filePath);
+      }
+      return this._stats.size; 
+    }
+  }
+  return new Reader({ filePath });
+}
+async function testUnzipFile({ path: filePath, sourcePath, content, buf }) {
+  tape(`ZipReader (File) - ${filePath}`, async function (t) {
+    const files = unzip(fileReader(sourcePath));
+    let count = 0;
+    for await (let f of files()) {
+      const isDirectory = f.path[f.path.length - 1] === '/';
+      if (isDirectory) continue;
+      const control = content[f.path];
+      t.equal(typeof control, 'object')
+      t.equal(f.path, control.path);
+      t.equal(f.size, control.size);
+      const buf = await readContent(f.content(), f.compressed);
+      t.deepEqual(buf, control.content);
+      count++;
+    }
+  })
+}
+
+
 async function readContent(it, inflate) {
   const blocks = [];
   for await (let block of it) {
@@ -51,6 +98,7 @@ async function* loadControl(dir) {
     const buf = fs.readFileSync(filePath);
     const content = await loadControlDirContent(controlDir);
     yield {
+      sourcePath : filePath,
       path : path.relative(dir, controlDir),
       // Transform to Uint8Array to be sure that everything works with arrays
       buf : new Uint8Array(buf),
