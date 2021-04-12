@@ -1,6 +1,6 @@
 {
   "name": "@agen/zip",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Unzip with Async Iterators",
   "keywords": [
     "async",
@@ -11,7 +11,7 @@
   "author": {
     "name": "Mikhail Kotelnikov"
   },
-  "type" : "module",
+  "type": "module",
   "main": "dist/agen-zip.js",
   "unpkg": "dist/agen-zip.min.js",
   "jsdelivr": "dist/agen-zip.min.js",
