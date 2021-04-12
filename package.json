@@ -15,6 +15,11 @@
   "unpkg": "dist/agen-zip.min.js",
   "jsdelivr": "dist/agen-zip.min.js",
   "module": "dist/agen-zip-esm.js",
+  "exports": {
+    "package.json": "./package.json",
+    "import": "./src/index.js",
+    "require": "./dist/agen-zip.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/agenjs/agen-zip.git"
