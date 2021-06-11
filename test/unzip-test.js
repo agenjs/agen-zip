@@ -3,7 +3,9 @@ import zlib from "zlib";
 import fs from "fs";
 import path from "path";
 import { bufferReader, unzip, RandomAccessReader, RandomAccessFileReader } from "../src/index.js";
-const { promisify } = require("util");
+import { promisify } from "util";
+import fileConsts from "./const.cjs";
+const { __dirname } = fileConsts;
 
 const readdir = promisify(fs.readdir);
 const stat = promisify(fs.stat);
@@ -16,7 +18,7 @@ tape(`ZipReader`, async function() {
   }
 });
 
-async function testUnzip({ path : filePath, content, buf }) {
+function testUnzip({ path : filePath, content, buf }) {
   tape(`ZipReader - ${filePath}`,  async function(t) {
     const files = unzip(bufferReader(buf));
     let count = 0;
@@ -36,7 +38,7 @@ async function testUnzip({ path : filePath, content, buf }) {
 
 function fileReader(filePath) {
   async function call(action){
-    return new Promise((resolve, reject) =>action(
+    return await new Promise((resolve, reject) =>action(
       (err, result) => (err ? reject(err) : resolve(result))
     ));
   }
@@ -61,7 +63,7 @@ function fileReader(filePath) {
   }
   return new Reader({ filePath });
 }
-async function testUnzipFile({ path: filePath, sourcePath, content, buf }) {
+function testUnzipFile({ path: filePath, sourcePath, content, buf }) {
   tape(`ZipReader (File) - ${filePath}`, async function (t) {
     const files = unzip(fileReader(sourcePath));
     let count = 0;
@@ -128,7 +130,7 @@ async function* list(filePath, recursive) {
   yield* _readDir(filePath);
   
   async function* _readDir(dir) {
-    let filePaths = await readdir(dir);
+    const filePaths = await readdir(dir);
     for (let filePath of filePaths) {
       filePath = path.resolve(dir, filePath);
       const fileStat = await stat(filePath);
